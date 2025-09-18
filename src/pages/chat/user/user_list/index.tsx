@@ -21,25 +21,27 @@ import {
 } from 'antd';
 import { EditOutlined, KeyOutlined, StopOutlined, UploadOutlined, PlusOutlined } from '@ant-design/icons';
 import { searchUsers, updateUser, blockUser, resetUserPassword, createUser } from '@/services/ant-design-pro/api';
+import { uploadAvatar } from '@/utils/fileUpload';
 import dayjs from 'dayjs';
 
 interface UserItem {
   userID: string;
-  password: string;
-  account: string;
-  phoneNumber: string;
-  areaCode: string;
-  email: string;
+  password?: string;
+  account?: string;
+  phoneNumber?: string;
+  areaCode?: string;
+  email?: string;
   nickname: string;
   faceURL: string;
   gender: number;
-  level: number;
-  birth: number;
-  allowAddFriend: number;
-  allowBeep: number;
-  allowVibration: number;
-  globalRecvMsgOpt: number;
-  registerType: number;
+  level?: number;
+  birth?: number;
+  allowAddFriend?: number;
+  allowBeep?: number;
+  allowVibration?: number;
+  globalRecvMsgOpt?: number;
+  registerType?: number;
+  createTime?: number;
 }
 
 const UserList: React.FC = () => {
@@ -62,18 +64,21 @@ const UserList: React.FC = () => {
   // 创建用户Drawer相关状态
   const [createUserDrawerVisible, setCreateUserDrawerVisible] = useState(false);
   const [createUserForm] = Form.useForm();
+  
+  // 头像上传相关状态
+  const [editingAvatarUrl, setEditingAvatarUrl] = useState<string>('');
+  const [creatingAvatarUrl, setCreatingAvatarUrl] = useState<string>('');
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   // 获取用户列表数据
   const fetchUserList = async (params: any) => {
     try {
       const response = await searchUsers({
-        current: params.current || 1,
-        pageSize: params.pageSize || 10,
         pagination: {
           pageNumber: params.current || 1,
           showNumber: params.pageSize || 10,
         },
-        normal: 1,
+        keyword: params.keyword || '',
       });
 
       if (response.errCode === 0) {
@@ -118,6 +123,7 @@ const UserList: React.FC = () => {
   // 编辑用户
   const handleEdit = (record: UserItem) => {
     setEditingUser(record);
+    setEditingAvatarUrl(record.faceURL || '');
     form.setFieldsValue({
       nickname: record.nickname,
       gender: record.gender,
@@ -141,7 +147,7 @@ const UserList: React.FC = () => {
       const updateData = {
         userID: editingUser.userID,
         nickname: values.nickname,
-        faceURL: editingUser.faceURL, // 暂时使用原头像，后续可支持上传
+        faceURL: editingAvatarUrl || editingUser.faceURL, // 使用上传的头像或原头像
         birth: values.birth ? values.birth.valueOf() : 0, // 转换为时间戳
         gender: values.gender,
       };
@@ -155,6 +161,7 @@ const UserList: React.FC = () => {
         message.success('用户信息更新成功');
         setDrawerVisible(false);
         form.resetFields();
+        setEditingAvatarUrl('');
         // 刷新表格数据
         setRefreshKey(prev => prev + 1);
       } else {
@@ -172,6 +179,7 @@ const UserList: React.FC = () => {
   const handleCloseDrawer = () => {
     setDrawerVisible(false);
     setEditingUser(null);
+    setEditingAvatarUrl('');
     form.resetFields();
   };
 
@@ -220,6 +228,7 @@ const UserList: React.FC = () => {
   // 创建用户
   const handleCreateUser = () => {
     setCreateUserDrawerVisible(true);
+    setCreatingAvatarUrl('');
     createUserForm.resetFields();
   };
 
@@ -233,20 +242,21 @@ const UserList: React.FC = () => {
 
       const response = await createUser({
         users: [{
+          userID: '', // 系统会自动生成
           nickname: values.nickname,
-          faceURL: values.faceURL || '',
-          birth: values.birth ? dayjs(values.birth).valueOf() : 0,
+          faceURL: creatingAvatarUrl || '',
           gender: values.gender,
           areaCode: values.areaCode || '+86',
           phoneNumber: values.phoneNumber,
           password: encryptedPassword,
-          registerType: 0,
+          email: '', // 暂时为空
         }]
       });
 
       if (response.errCode === 0) {
         message.success('用户创建成功');
         setCreateUserDrawerVisible(false);
+        setCreatingAvatarUrl('');
         setRefreshKey(prev => prev + 1);
       } else {
         message.error(response.errMsg || '用户创建失败');
@@ -260,7 +270,59 @@ const UserList: React.FC = () => {
   // 关闭创建用户Drawer
   const handleCloseCreateUserDrawer = () => {
     setCreateUserDrawerVisible(false);
+    setCreatingAvatarUrl('');
     createUserForm.resetFields();
+  };
+
+  // 处理编辑用户头像上传
+  const handleEditAvatarUpload = async (options: any) => {
+    const { file, onSuccess, onError } = options;
+    
+    if (!editingUser) {
+      onError(new Error('用户信息不存在'));
+      return;
+    }
+
+    setAvatarUploading(true);
+    try {
+      const result = await uploadAvatar(file, editingUser.userID);
+      if (result.success) {
+        setEditingAvatarUrl(result.url);
+        onSuccess({ url: result.url });
+        message.success('头像上传成功');
+      } else {
+        onError(new Error(result.error || '上传失败'));
+      }
+    } catch (error: any) {
+      console.error('头像上传失败:', error);
+      onError(error);
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  // 处理创建用户头像上传
+  const handleCreateAvatarUpload = async (options: any) => {
+    const { file, onSuccess, onError } = options;
+    
+    setAvatarUploading(true);
+    try {
+      // 为创建用户生成临时用户ID
+      const tempUserID = `temp_${Date.now()}`;
+      const result = await uploadAvatar(file, tempUserID);
+      if (result.success) {
+        setCreatingAvatarUrl(result.url);
+        onSuccess({ url: result.url });
+        message.success('头像上传成功');
+      } else {
+        onError(new Error(result.error || '上传失败'));
+      }
+    } catch (error: any) {
+      console.error('头像上传失败:', error);
+      onError(error);
+    } finally {
+      setAvatarUploading(false);
+    }
   };
 
   // 禁用用户
@@ -304,10 +366,18 @@ const UserList: React.FC = () => {
 
   const columns: ProColumns<UserItem>[] = [
     {
+      title: '用户ID/手机号',
+      dataIndex: 'keyword',
+      key: 'keyword',
+      hideInTable: true,
+      renderFormItem: () => <Input placeholder="请输入用户ID或手机号" />,
+    },
+    {
       title: '用户头像',
       dataIndex: 'faceURL',
       key: 'faceURL',
       width: 80,
+      hideInSearch: true,
       render: (_, record) => {
         // 获取昵称的首字母或首字
         const getInitial = (nickname: string) => {
@@ -337,6 +407,7 @@ const UserList: React.FC = () => {
       key: 'nickname',
       width: 120,
       render: (_, record) => record.nickname || '-',
+      hideInSearch: true,
     },
     {
       title: '用户ID',
@@ -344,6 +415,7 @@ const UserList: React.FC = () => {
       key: 'userID',
       width: 120,
       copyable: true,
+      hideInSearch: true,
     },
     {
       title: '性别',
@@ -351,6 +423,7 @@ const UserList: React.FC = () => {
       key: 'gender',
       width: 80,
       render: (_, record) => getGenderText(record.gender),
+      hideInSearch: true,
     },
     {
       title: '手机号',
@@ -359,6 +432,7 @@ const UserList: React.FC = () => {
       width: 140,
       render: (_, record) => 
         record.phoneNumber ? `${record.areaCode || '+86'} ${record.phoneNumber}` : '-',
+      hideInSearch: true,
     },
     {
       title: '用户邮箱',
@@ -366,18 +440,21 @@ const UserList: React.FC = () => {
       key: 'email',
       width: 180,
       render: (_, record) => record.email || '-',
+      hideInSearch: true,
     },
     {
       title: '在线状态',
       key: 'onlineStatus',
       width: 100,
       render: () => getOnlineStatus(),
+      hideInSearch: true,
     },
     {
       title: '操作',
       key: 'action',
       width: 251,
       fixed: 'right',
+      hideInSearch: true,
       render: (_, record) => (
         <Space>
           <Button
@@ -427,7 +504,12 @@ const UserList: React.FC = () => {
           key={refreshKey}
           columns={columns}
           rowKey="userID"
-          search={false}
+          search={{
+            labelWidth: 'auto',
+            defaultCollapsed: false,
+            searchText: '搜索',
+            resetText: '重置',
+          }}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
@@ -452,6 +534,9 @@ const UserList: React.FC = () => {
               创建用户
             </Button>,
           ]}
+          form={{
+            ignoreRules: false,
+          }}
         />
       
       {/* 编辑用户Drawer */}
@@ -486,7 +571,7 @@ const UserList: React.FC = () => {
                 <div style={{ textAlign: 'center' }}>
                   <Avatar
                     size={80}
-                    src={editingUser?.faceURL}
+                    src={editingAvatarUrl || editingUser?.faceURL}
                     style={{ backgroundColor: '#1890ff' }}
                   >
                     {editingUser?.nickname?.charAt(0) || 'U'}
@@ -496,10 +581,29 @@ const UserList: React.FC = () => {
                       name="avatar"
                       listType="text"
                       showUploadList={false}
-                      beforeUpload={() => false}
+                      customRequest={handleEditAvatarUpload}
+                      accept="image/*"
+                      beforeUpload={(file) => {
+                        const isImage = file.type.startsWith('image/');
+                        if (!isImage) {
+                          message.error('只能上传图片文件');
+                          return false;
+                        }
+                        const isLt2M = file.size / 1024 / 1024 < 2;
+                        if (!isLt2M) {
+                          message.error('图片大小不能超过 2MB');
+                          return false;
+                        }
+                        return true;
+                      }}
                     >
-                      <Button icon={<UploadOutlined />} size="small">
-                        更换头像
+                      <Button 
+                        icon={<UploadOutlined />} 
+                        size="small" 
+                        loading={avatarUploading}
+                        disabled={avatarUploading}
+                      >
+                        {avatarUploading ? '上传中...' : '更换头像'}
                       </Button>
                     </Upload>
                   </div>
@@ -698,19 +802,39 @@ const UserList: React.FC = () => {
               <div style={{ textAlign: 'center' }}>
                 <Avatar
                   size={80}
+                  src={creatingAvatarUrl}
                   style={{ backgroundColor: '#1890ff' }}
                 >
-                  U
+                  {creatingAvatarUrl ? '' : 'U'}
                 </Avatar>
                 <div style={{ marginTop: 8 }}>
                   <Upload
                     name="avatar"
                     listType="text"
                     showUploadList={false}
-                    beforeUpload={() => false}
+                    customRequest={handleCreateAvatarUpload}
+                    accept="image/*"
+                    beforeUpload={(file) => {
+                      const isImage = file.type.startsWith('image/');
+                      if (!isImage) {
+                        message.error('只能上传图片文件');
+                        return false;
+                      }
+                      const isLt2M = file.size / 1024 / 1024 < 2;
+                      if (!isLt2M) {
+                        message.error('图片大小不能超过 2MB');
+                        return false;
+                      }
+                      return true;
+                    }}
                   >
-                    <Button icon={<UploadOutlined />} size="small">
-                      上传头像
+                    <Button 
+                      icon={<UploadOutlined />} 
+                      size="small"
+                      loading={avatarUploading}
+                      disabled={avatarUploading}
+                    >
+                      {avatarUploading ? '上传中...' : '上传头像'}
                     </Button>
                   </Upload>
                 </div>

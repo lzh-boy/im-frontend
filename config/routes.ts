@@ -157,9 +157,9 @@ export default [
         component: './profile/info',
       },
       {
-        path: '/profile/modify',
+        path: '/profile/password',
         name: '修改密码',
-        component: './profile/modify',
+        component: './profile/password',
       },
     ],
   },

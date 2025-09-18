@@ -404,3 +404,89 @@ export async function removeRule(options?: { [key: string]: any }) {
     data: options || {},
   });
 }
+
+/** 删除客户端日志 */
+export async function deleteClientLogs(body: { logIDs: string[] }, options?: { [key: string]: any }) {
+  return request<BaseResponse>('/third/logs/delete', {
+    method: 'POST',
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 更新账户信息 */
+export async function updateAccountInfo(body: { userID: string; nickname?: string; faceURL?: string }, options?: { [key: string]: any }) {
+  return request<BaseResponse>('/account/update', {
+    method: 'POST',
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 修改密码 */
+export async function changePassword(body: { userID: string; currentPassword: string; newPassword: string }, options?: { [key: string]: any }) {
+  return request<BaseResponse>('/account/change_password', {
+    method: 'POST',
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 获取分片上传大小 */
+export async function getPartSize(body: { size: number }, options?: { [key: string]: any }) {
+  return request<BaseResponse<{ size: number }>>('/object/part_size', {
+    method: 'POST',
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 初始化分片上传 */
+export async function initiateMultipartUpload(body: {
+  hash: string;
+  size: number;
+  partSize: number;
+  maxParts: number;
+  cause: string;
+  name: string;
+  contentType: string;
+}, options?: { [key: string]: any }) {
+  return request<BaseResponse<{
+    url: string;
+    upload: {
+      uploadID: string;
+      partSize: number;
+      sign: {
+        url: string;
+        query: any;
+        header: any;
+        parts: Array<{
+          partNumber: number;
+          url: string;
+          query: any;
+          header: any;
+        }>;
+      };
+      expireTime: number;
+    };
+  }>>('/object/initiate_multipart_upload', {
+    method: 'POST',
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 完成分片上传 */
+export async function completeMultipartUpload(body: {
+  uploadID: string;
+  parts: string[];
+  cause: string;
+  name: string;
+  contentType: string;
+}, options?: { [key: string]: any }) {
+  return request<BaseResponse<{ url: string }>>('/object/complete_multipart_upload', {
+    method: 'POST',
+    data: body,
+    ...(options || {}),
+  });
+}

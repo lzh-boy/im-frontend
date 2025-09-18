@@ -120,7 +120,11 @@ export const errorConfig: RequestConfig = {
           url.includes('/group/dismiss_group') ||
           url.includes('/msg/search_msg') ||
           url.includes('/msg/revoke_msg') ||
-          url.includes('/third/logs/search')) {
+          url.includes('/third/logs/search') ||
+          url.includes('/third/logs/delete') ||
+          url.includes('/object/part_size') ||
+          url.includes('/object/initiate_multipart_upload') ||
+          url.includes('/object/complete_multipart_upload')) {
         token = localStorage.getItem('imToken') || '';
         console.log('IM系统API - 使用imToken:', token);
       } else {

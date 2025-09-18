@@ -131,6 +131,7 @@ export interface CreateUserParams {
 // 默认好友相关
 export interface SearchDefaultFriendsParams {
   pagination: PaginationParams;
+  keyword?: string;
 }
 
 export interface DefaultFriend {
@@ -181,6 +182,8 @@ export interface RemoveDefaultGroupParams {
 // IM 用户相关
 export interface GetIMUsersParams {
   pagination: PaginationParams;
+  userID?: string;
+  nickname?: string;
 }
 
 export interface IMUser {

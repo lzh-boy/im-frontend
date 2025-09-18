@@ -12,7 +12,8 @@ import {
   Tag,
   Drawer,
   Checkbox,
-  Typography
+  Typography,
+  Input
 } from 'antd';
 import { LogoutOutlined, TeamOutlined } from '@ant-design/icons';
 import { getIMUsers, forceUserLogout, getFriendList, deleteFriend, getUsersOnlineStatus } from '@/services/ant-design-pro/api';
@@ -78,8 +79,8 @@ const IMUserList: React.FC = () => {
 
       if (response.errCode === 0) {
         const statusMap: { [key: string]: { status: number; platforms: number[] } } = {};
-        response.data.forEach((item) => {
-          const platforms = item.singlePlatformToken.map(token => token.platformID);
+        (response.data as any).forEach((item: any) => {
+          const platforms = item.singlePlatformToken.map((token: any) => token.platformID);
           statusMap[item.userID] = {
             status: item.status,
             platforms: platforms,
@@ -98,12 +99,12 @@ const IMUserList: React.FC = () => {
   const fetchIMUsers = async (params: any) => {
     try {
       const response = await getIMUsers({
-        current: params.current || 1,
-        pageSize: params.pageSize || 10,
         pagination: {
           pageNumber: params.current || 1,
           showNumber: params.pageSize || 10,
         },
+        userID: params.userID || undefined,
+        nickname: params.nickname || undefined,
       });
 
       if (response.errCode === 0) {
@@ -213,7 +214,7 @@ const IMUserList: React.FC = () => {
       });
 
       if (response.errCode === 0) {
-        setFriends(response.data.friendsInfo || []);
+        setFriends(response.data.friendsInfo as any || []);
         setFriendsTotal(response.data.total || 0);
       } else {
         message.error(response.errMsg || '获取关系链失败');
@@ -273,7 +274,7 @@ const IMUserList: React.FC = () => {
       });
 
       if (response.errCode === 0) {
-        setFriends(response.data.friendsInfo || []);
+        setFriends(response.data.friendsInfo as any || []);
         setFriendsTotal(response.data.total || 0);
       } else {
         message.error(response.errMsg || '获取好友列表失败');
@@ -342,10 +343,25 @@ const IMUserList: React.FC = () => {
 
   const columns: ProColumns<IMUserItem>[] = [
     {
+      title: '用户昵称',
+      dataIndex: 'nickname',
+      key: 'nickname',
+      hideInTable: true,
+      renderFormItem: () => <Input placeholder="请输入用户昵称" />,
+    },
+    {
+      title: '用户ID',
+      dataIndex: 'userID',
+      key: 'userID',
+      hideInTable: true,
+      renderFormItem: () => <Input placeholder="请输入用户ID" />,
+    },
+    {
       title: '用户头像',
       dataIndex: 'faceURL',
       key: 'faceURL',
       width: 80,
+      hideInSearch: true,
       render: (_, record) => (
         <Avatar
           src={record.faceURL || undefined}
@@ -362,6 +378,7 @@ const IMUserList: React.FC = () => {
       key: 'nickname',
       width: 120,
       render: (_, record) => record.nickname || '-',
+      hideInSearch: true,
     },
     {
       title: '用户ID',
@@ -369,11 +386,13 @@ const IMUserList: React.FC = () => {
       key: 'userID',
       width: 120,
       copyable: true,
+      hideInSearch: true,
     },
     {
       title: '在线状态',
       key: 'onlineStatus',
       width: 150,
+      hideInSearch: true,
       render: (_, record) => {
         const { text, color } = getOnlineStatusDisplay(record);
         return (
@@ -388,6 +407,7 @@ const IMUserList: React.FC = () => {
       dataIndex: 'createTime',
       key: 'createTime',
       width: 150,
+      hideInSearch: true,
       render: (_, record) => {
         return new Date(record.createTime).toLocaleString('zh-CN');
       },
@@ -397,6 +417,7 @@ const IMUserList: React.FC = () => {
       key: 'action',
       width: 200,
       fixed: 'right',
+      hideInSearch: true,
       render: (_, record) => {
         const isOnline = record.onlineStatus?.status === 1;
         return (
@@ -514,7 +535,12 @@ const IMUserList: React.FC = () => {
         key={refreshKey}
         columns={columns}
         rowKey="userID"
-        search={false}
+        search={{
+          labelWidth: 'auto',
+          defaultCollapsed: false,
+          searchText: '搜索',
+          resetText: '重置',
+        }}
         pagination={{
           pageSize: 10,
           showSizeChanger: true,
@@ -529,6 +555,9 @@ const IMUserList: React.FC = () => {
           fullScreen: true,
         }}
         scroll={{ x: 1000 }}
+        form={{
+          ignoreRules: false,
+        }}
       />
 
       {/* 关系链弹窗 */}

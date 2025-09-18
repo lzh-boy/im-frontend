@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import { Avatar, Tag, Space, Button, Popconfirm, message, Typography, DatePicker } from 'antd';
 import { DownloadOutlined, DeleteOutlined } from '@ant-design/icons';
-import { searchClientLogs } from '@/services/ant-design-pro/api';
+import { searchClientLogs, deleteClientLogs } from '@/services/ant-design-pro/api';
 import { LogItem, PLATFORM_TYPES } from './types';
 import dayjs from 'dayjs';
 
@@ -100,9 +100,16 @@ const ClientLogList: React.FC = () => {
   // 删除日志
   const handleDelete = async (record: LogItem) => {
     try {
-      // 这里需要调用删除日志的 API，暂时显示成功消息
-      message.success('日志删除成功');
-      setRefreshKey(prev => prev + 1);
+      const response = await deleteClientLogs({
+        logIDs: [record.logID]
+      });
+
+      if (response.errCode === 0) {
+        message.success('日志删除成功');
+        setRefreshKey(prev => prev + 1);
+      } else {
+        message.error(response.errMsg || '删除日志失败');
+      }
     } catch (error) {
       console.error('删除日志失败:', error);
       message.error('删除日志失败，请重试');

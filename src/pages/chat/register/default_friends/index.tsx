@@ -63,12 +63,11 @@ const DefaultFriends: React.FC = () => {
   const fetchDefaultFriends = async (params: any) => {
     try {
       const response = await searchDefaultFriends({
-        current: params.current || 1,
-        pageSize: params.pageSize || 10,
         pagination: {
           pageNumber: params.current || 1,
           showNumber: params.pageSize || 10,
         },
+        keyword: params.keyword || '',
       });
 
       if (response.errCode === 0) {
@@ -98,20 +97,17 @@ const DefaultFriends: React.FC = () => {
     setSearchLoading(true);
     try {
       const response = await searchUsers({
-        current: 1,
-        pageSize: 100,
-        keyword: searchText,
         pagination: {
           pageNumber: 1,
           showNumber: 100,
         },
-        normal: 1,
+        keyword: searchText,
       });
 
       if (response.errCode === 0) {
         const users = response.data.users || [];
-        setAllUsers(users);
-        setFilteredUsers(users);
+        setAllUsers(users as any);
+        setFilteredUsers(users as any);
       } else {
         setAllUsers([]);
         setFilteredUsers([]);
@@ -152,7 +148,7 @@ const DefaultFriends: React.FC = () => {
   const handleRemove = async (record: DefaultFriendItem) => {
     try {
       const response = await removeDefaultFriend({
-        userIDs: [record.userID],
+        userID: record.userID,
       });
 
       if (response.errCode === 0) {
@@ -186,7 +182,7 @@ const DefaultFriends: React.FC = () => {
 
     try {
       const response = await addDefaultFriend({
-        userIDs: selectedUsers.map(user => user.userID),
+        userID: selectedUsers[0].userID, // 暂时只添加第一个用户
       });
 
       if (response.errCode === 0) {
@@ -225,7 +221,7 @@ const DefaultFriends: React.FC = () => {
       dataIndex: 'faceURL',
       key: 'faceURL',
       width: 60,
-      render: (_, record: UserItem) => (
+      render: (_: any, record: UserItem) => (
         <Avatar
           src={record.faceURL || undefined}
           size={32}
@@ -240,7 +236,7 @@ const DefaultFriends: React.FC = () => {
       dataIndex: 'nickname',
       key: 'nickname',
       width: 120,
-      render: (_, record: UserItem) => record.nickname || '-',
+      render: (_: any, record: UserItem) => record.nickname || '-',
     },
     {
       title: '用户ID',
@@ -253,10 +249,18 @@ const DefaultFriends: React.FC = () => {
 
   const columns: ProColumns<DefaultFriendItem>[] = [
     {
+      title: '用户ID',
+      dataIndex: 'keyword',
+      key: 'keyword',
+      hideInTable: true,
+      renderFormItem: () => <Input placeholder="请输入用户ID" />,
+    },
+    {
       title: '用户头像',
       dataIndex: 'faceURL',
       key: 'faceURL',
       width: 80,
+      hideInSearch: true,
       render: (_, record) => (
         <Avatar
           src={record.faceURL || undefined}
@@ -273,6 +277,7 @@ const DefaultFriends: React.FC = () => {
       key: 'userID',
       width: 120,
       copyable: true,
+      hideInSearch: true,
     },
     {
       title: '用户昵称',
@@ -280,12 +285,14 @@ const DefaultFriends: React.FC = () => {
       key: 'nickname',
       width: 120,
       render: (_, record) => record.nickname || '-',
+      hideInSearch: true,
     },
     {
       title: '操作',
       key: 'action',
       width: 120,
       fixed: 'right',
+      hideInSearch: true,
       render: (_, record) => (
         <Space>
           <Popconfirm
@@ -326,7 +333,12 @@ const DefaultFriends: React.FC = () => {
         key={refreshKey}
         columns={columns}
         rowKey="userID"
-        search={false}
+        search={{
+          labelWidth: 'auto',
+          defaultCollapsed: false,
+          searchText: '搜索',
+          resetText: '重置',
+        }}
         pagination={{
           pageSize: 10,
           showSizeChanger: true,
@@ -341,6 +353,9 @@ const DefaultFriends: React.FC = () => {
           fullScreen: true,
         }}
         scroll={{ x: 600 }}
+        form={{
+          ignoreRules: false,
+        }}
         toolBarRender={() => [
           <Button
             type="primary"
