@@ -104,33 +104,17 @@ export const errorConfig: RequestConfig = {
       let token = '';
       
       // IM系统相关的API使用imToken
-      if (url.includes('/user/get_users') || 
-          url.includes('/user/force_logout') || 
-          url.includes('/user/get_user_friends') ||
-          url.includes('/user/get_users_online_token_detail') ||
-          url.includes('/friend/get_friend_list') ||
-          url.includes('/friend/delete_friend') ||
-          url.includes('/auth/force_logout') ||
-          url.includes('/group/get_groups') ||
-          url.includes('/group/get_group_member_list') ||
-          url.includes('/group/create_group') ||
-          url.includes('/group/set_group_info') ||
-          url.includes('/group/mute_group') ||
-          url.includes('/group/cancel_mute_group') ||
-          url.includes('/group/dismiss_group') ||
-          url.includes('/msg/search_msg') ||
-          url.includes('/msg/revoke_msg') ||
-          url.includes('/third/logs/search') ||
-          url.includes('/third/logs/delete') ||
-          url.includes('/object/part_size') ||
-          url.includes('/object/initiate_multipart_upload') ||
-          url.includes('/object/complete_multipart_upload')) {
+      if (url.includes('/api/im/')) {
         token = localStorage.getItem('imToken') || '';
         console.log('IM系统API - 使用imToken:', token);
+      } else if (url.includes('/api/user/')) {
+        // 用户服务API使用userToken（如果有的话，否则使用adminToken）
+        token = localStorage.getItem('userToken') || localStorage.getItem('adminToken') || '';
+        console.log('用户服务API - 使用userToken/adminToken:', token);
       } else {
-        // 其他API使用adminToken
+        // 管理后台服务API使用adminToken
         token = localStorage.getItem('adminToken') || '';
-        console.log('其他API - 使用adminToken:', token);
+        console.log('管理后台API - 使用adminToken:', token);
       }
       
       // 生成随机UUID作为operationid

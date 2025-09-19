@@ -59,7 +59,7 @@ function generateUUID(): string {
 
 /** 获取当前的用户 */
 export async function currentUser(options?: { [key: string]: any }) {
-  return request<BaseResponse<UserInfo>>('/api/account/info', {
+  return request<BaseResponse<UserInfo>>('/api/admin/account/info', {
     method: 'POST',
     data: {},
     ...(options || {}),
@@ -68,7 +68,7 @@ export async function currentUser(options?: { [key: string]: any }) {
 
 /** 退出登录接口 */
 export async function outLogin(options?: { [key: string]: any }) {
-  return request<Record<string, any>>('/api/login/outLogin', {
+  return request<Record<string, any>>('/api/admin/login/outLogin', {
     method: 'POST',
     ...(options || {}),
   });
@@ -80,7 +80,7 @@ export async function login(body: LoginParams, options?: { [key: string]: any })
   const operationId = generateUUID();
   console.log('生成的 operationid:', operationId);
 
-  return request<LoginResult>('/api/account/login', {
+  return request<LoginResult>('/api/admin/account/login', {
     method: 'POST',
     data: {
       ...body,
@@ -97,7 +97,7 @@ export async function login(body: LoginParams, options?: { [key: string]: any })
 
 /** 搜索用户 */
 export async function searchUsers(body: SearchUsersParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<SearchUsersResponse>>('/api/user/search/full', {
+  return request<BaseResponse<SearchUsersResponse>>('/api/user/user/search/full', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -115,7 +115,7 @@ export async function updateUser(body: UpdateUserParams, options?: { [key: strin
 
 /** 搜索封禁用户 */
 export async function searchBlockedUsers(body: SearchBlockedUsersParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<SearchBlockedUsersResponse>>('/api/block/search', {
+  return request<BaseResponse<SearchBlockedUsersResponse>>('/api/admin/block/search', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -124,7 +124,7 @@ export async function searchBlockedUsers(body: SearchBlockedUsersParams, options
 
 /** 解禁用户 */
 export async function unblockUser(body: UnblockUserParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<{}>>('/api/block/del', {
+  return request<BaseResponse<{}>>('/api/admin/block/del', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -133,7 +133,7 @@ export async function unblockUser(body: UnblockUserParams, options?: { [key: str
 
 /** 封禁用户 */
 export async function blockUser(body: BlockUserParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<{}>>('/api/block/add', {
+  return request<BaseResponse<{}>>('/api/admin/block/add', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -142,7 +142,7 @@ export async function blockUser(body: BlockUserParams, options?: { [key: string]
 
 /** 重置用户密码 */
 export async function resetUserPassword(body: ResetPasswordParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<{}>>('/api/user/password/reset', {
+  return request<BaseResponse<{}>>('/api/admin/user/password/reset', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -151,7 +151,7 @@ export async function resetUserPassword(body: ResetPasswordParams, options?: { [
 
 /** 创建用户 */
 export async function createUser(body: CreateUserParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<{}>>('/api/user/import/json', {
+  return request<BaseResponse<{}>>('/api/admin/user/import/json', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -162,7 +162,7 @@ export async function createUser(body: CreateUserParams, options?: { [key: strin
 
 /** 搜索默认好友 */
 export async function searchDefaultFriends(body: SearchDefaultFriendsParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<SearchDefaultFriendsResponse>>('/api/default/user/search', {
+  return request<BaseResponse<SearchDefaultFriendsResponse>>('/api/admin/default/user/search', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -171,7 +171,7 @@ export async function searchDefaultFriends(body: SearchDefaultFriendsParams, opt
 
 /** 添加默认好友 */
 export async function addDefaultFriend(body: AddDefaultFriendParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<{}>>('/api/default/user/add', {
+  return request<BaseResponse<{}>>('/api/admin/default/user/add', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -180,7 +180,7 @@ export async function addDefaultFriend(body: AddDefaultFriendParams, options?: {
 
 /** 移除默认好友 */
 export async function removeDefaultFriend(body: RemoveDefaultFriendParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<{}>>('/api/default/user/del', {
+  return request<BaseResponse<{}>>('/api/admin/default/user/del', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -189,7 +189,7 @@ export async function removeDefaultFriend(body: RemoveDefaultFriendParams, optio
 
 /** 搜索默认群组 */
 export async function searchDefaultGroups(body: SearchDefaultGroupsParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<SearchDefaultGroupsResponse>>('/api/default/group/search', {
+  return request<BaseResponse<SearchDefaultGroupsResponse>>('/api/admin/default/group/search', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -198,7 +198,7 @@ export async function searchDefaultGroups(body: SearchDefaultGroupsParams, optio
 
 /** 添加默认群组 */
 export async function addDefaultGroup(body: AddDefaultGroupParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<{}>>('/api/default/group/add', {
+  return request<BaseResponse<{}>>('/api/admin/default/group/add', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -207,7 +207,7 @@ export async function addDefaultGroup(body: AddDefaultGroupParams, options?: { [
 
 /** 移除默认群组 */
 export async function removeDefaultGroup(body: RemoveDefaultGroupParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<{}>>('/api/default/group/del', {
+  return request<BaseResponse<{}>>('/api/admin/default/group/del', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -218,7 +218,7 @@ export async function removeDefaultGroup(body: RemoveDefaultGroupParams, options
 
 /** 获取IM用户列表 */
 export async function getIMUsers(body: GetIMUsersParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<GetIMUsersResponse>>('/api/user/get_users', {
+  return request<BaseResponse<GetIMUsersResponse>>('/api/im/user/get_users', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -227,7 +227,7 @@ export async function getIMUsers(body: GetIMUsersParams, options?: { [key: strin
 
 /** 强制用户下线 */
 export async function forceUserLogout(body: ForceLogoutParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<{}>>('/api/auth/force_logout', {
+  return request<BaseResponse<{}>>('/api/im/auth/force_logout', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -236,7 +236,7 @@ export async function forceUserLogout(body: ForceLogoutParams, options?: { [key:
 
 /** 获取用户好友列表 */
 export async function getFriendList(body: GetFriendListParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<GetFriendListResponse>>('/api/friend/get_friend_list', {
+  return request<BaseResponse<GetFriendListResponse>>('/api/im/friend/get_friend_list', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -245,7 +245,7 @@ export async function getFriendList(body: GetFriendListParams, options?: { [key:
 
 /** 删除好友 */
 export async function deleteFriend(body: DeleteFriendParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<{}>>('/api/friend/delete_friend', {
+  return request<BaseResponse<{}>>('/api/im/friend/delete_friend', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -254,7 +254,7 @@ export async function deleteFriend(body: DeleteFriendParams, options?: { [key: s
 
 /** 获取用户在线状态 */
 export async function getUsersOnlineStatus(body: GetUsersOnlineStatusParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<GetUsersOnlineStatusResponse>>('/api/user/get_users_online_token_detail', {
+  return request<BaseResponse<GetUsersOnlineStatusResponse>>('/api/im/user/get_users_online_token_detail', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -265,7 +265,7 @@ export async function getUsersOnlineStatus(body: GetUsersOnlineStatusParams, opt
 
 /** 获取群组列表 */
 export async function getGroups(body: GetGroupsParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<GetGroupsResponse>>('/api/group/get_groups', {
+  return request<BaseResponse<GetGroupsResponse>>('/api/im/group/get_groups', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -274,7 +274,7 @@ export async function getGroups(body: GetGroupsParams, options?: { [key: string]
 
 /** 获取群组成员列表 */
 export async function getGroupMemberList(body: GetGroupMemberListParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<GetGroupMemberListResponse>>('/api/group/get_group_member_list', {
+  return request<BaseResponse<GetGroupMemberListResponse>>('/api/im/group/get_group_member_list', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -283,7 +283,7 @@ export async function getGroupMemberList(body: GetGroupMemberListParams, options
 
 /** 创建群组 */
 export async function createGroup(body: CreateGroupParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<{}>>('/api/group/create_group', {
+  return request<BaseResponse<{}>>('/api/im/group/create_group', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -292,7 +292,7 @@ export async function createGroup(body: CreateGroupParams, options?: { [key: str
 
 /** 设置群组信息 */
 export async function setGroupInfo(body: SetGroupInfoParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<{}>>('/api/group/set_group_info', {
+  return request<BaseResponse<{}>>('/api/im/group/set_group_info', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -301,7 +301,7 @@ export async function setGroupInfo(body: SetGroupInfoParams, options?: { [key: s
 
 /** 全体禁言 */
 export async function muteGroup(body: MuteGroupParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<{}>>('/api/group/mute_group', {
+  return request<BaseResponse<{}>>('/api/im/group/mute_group', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -310,7 +310,7 @@ export async function muteGroup(body: MuteGroupParams, options?: { [key: string]
 
 /** 取消全体禁言 */
 export async function cancelMuteGroup(body: MuteGroupParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<{}>>('/api/group/cancel_mute_group', {
+  return request<BaseResponse<{}>>('/api/im/group/cancel_mute_group', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -319,7 +319,7 @@ export async function cancelMuteGroup(body: MuteGroupParams, options?: { [key: s
 
 /** 解散群组 */
 export async function dismissGroup(body: DismissGroupParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<{}>>('/api/group/dismiss_group', {
+  return request<BaseResponse<{}>>('/api/im/group/dismiss_group', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -330,7 +330,7 @@ export async function dismissGroup(body: DismissGroupParams, options?: { [key: s
 
 /** 搜索用户消息 */
 export async function searchUserMessages(body: SearchUserMessagesParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<SearchUserMessagesResponse>>('/api/msg/search_msg', {
+  return request<BaseResponse<SearchUserMessagesResponse>>('/api/im/msg/search_msg', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -339,7 +339,7 @@ export async function searchUserMessages(body: SearchUserMessagesParams, options
 
 /** 撤回消息 */
 export async function revokeMessage(body: RevokeMessageParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<{}>>('/api/msg/revoke_msg', {
+  return request<BaseResponse<{}>>('/api/im/msg/revoke_msg', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -350,7 +350,7 @@ export async function revokeMessage(body: RevokeMessageParams, options?: { [key:
 
 /** 搜索客户端日志 */
 export async function searchClientLogs(body: SearchClientLogsParams, options?: { [key: string]: any }) {
-  return request<BaseResponse<SearchClientLogsResponse>>('/api/third/logs/search', {
+  return request<BaseResponse<SearchClientLogsResponse>>('/api/im/third/logs/search', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -410,7 +410,7 @@ export async function removeRule(options?: { [key: string]: any }) {
 
 /** 删除客户端日志 */
 export async function deleteClientLogs(body: { logIDs: string[] }, options?: { [key: string]: any }) {
-  return request<BaseResponse>('/api/third/logs/delete', {
+  return request<BaseResponse>('/api/im/third/logs/delete', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -419,7 +419,7 @@ export async function deleteClientLogs(body: { logIDs: string[] }, options?: { [
 
 /** 更新账户信息 */
 export async function updateAccountInfo(body: { userID: string; nickname?: string; faceURL?: string }, options?: { [key: string]: any }) {
-  return request<BaseResponse>('/api/account/update', {
+  return request<BaseResponse>('/api/admin/account/update', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -428,7 +428,7 @@ export async function updateAccountInfo(body: { userID: string; nickname?: strin
 
 /** 修改密码 */
 export async function changePassword(body: { userID: string; currentPassword: string; newPassword: string }, options?: { [key: string]: any }) {
-  return request<BaseResponse>('/api/account/change_password', {
+  return request<BaseResponse>('/api/admin/account/change_password', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -437,7 +437,7 @@ export async function changePassword(body: { userID: string; currentPassword: st
 
 /** 获取分片上传大小 */
 export async function getPartSize(body: { size: number }, options?: { [key: string]: any }) {
-  return request<BaseResponse<{ size: number }>>('/api/object/part_size', {
+  return request<BaseResponse<{ size: number }>>('/api/im/object/part_size', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -472,7 +472,7 @@ export async function initiateMultipartUpload(body: {
       };
       expireTime: number;
     };
-  }>>('/api/object/initiate_multipart_upload', {
+  }>>('/api/im/object/initiate_multipart_upload', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -487,7 +487,7 @@ export async function completeMultipartUpload(body: {
   name: string;
   contentType: string;
 }, options?: { [key: string]: any }) {
-  return request<BaseResponse<{ url: string }>>('/api/object/complete_multipart_upload', {
+  return request<BaseResponse<{ url: string }>>('/api/im/object/complete_multipart_upload', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -501,7 +501,7 @@ export async function addNotificationAccount(body: {
   faceURL: string;
   appMangerLevel: number;
 }, options?: { [key: string]: any }) {
-  return request<BaseResponse>('/api/user/add_notification_account', {
+  return request<BaseResponse>('/api/im/user/add_notification_account', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -516,17 +516,14 @@ export async function getNotificationAccounts(body: {
   };
 }, options?: { [key: string]: any }) {
   return request<BaseResponse<{
-    accounts: Array<{
-      id: string;
+    notificationAccounts: Array<{
       userID: string;
       nickName: string;
       faceURL: string;
       appMangerLevel: number;
-      createTime: string;
-      updateTime: string;
     }>;
     total: number;
-  }>>('/api/user/get_notification_accounts', {
+  }>>('/api/im/user/search_notification_account', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -535,9 +532,9 @@ export async function getNotificationAccounts(body: {
 
 /** 删除通知账号 */
 export async function deleteNotificationAccount(body: {
-  id: string;
+  userID: string;
 }, options?: { [key: string]: any }) {
-  return request<BaseResponse>('/api/user/delete_notification_account', {
+  return request<BaseResponse>('/api/im/user/delete_notification_account', {
     method: 'POST',
     data: body,
     ...(options || {}),
@@ -546,13 +543,81 @@ export async function deleteNotificationAccount(body: {
 
 /** 更新通知账号 */
 export async function updateNotificationAccount(body: {
-  id: string;
   userID: string;
   nickName: string;
-  faceURL: string;
-  appMangerLevel: number;
+  faceURL?: string;
 }, options?: { [key: string]: any }) {
-  return request<BaseResponse>('/api/user/update_notification_account', {
+  return request<BaseResponse>('/api/im/user/update_notification_account', {
+    method: 'POST',
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 发送通知 */
+export async function sendNotification(body: {
+  isSendAll: boolean;
+  sendID: string;
+  recvIDs: string[];
+  groupID?: string;
+  senderNickname: string;
+  senderFaceURL: string;
+  senderPlatformID: number;
+  content: {
+    notificationName: string;
+    notificationType: number;
+    text: string;
+    externalUrl?: string;
+    mixType: number;
+    pictureElem?: {
+      sourcePath: string;
+      sourcePicture: {
+        uuid: string;
+        type: string;
+        size: number;
+        width: number;
+        height: number;
+        url: string;
+      };
+      bigPicture: {
+        uuid: string;
+        type: string;
+        size: number;
+        width: number;
+        height: number;
+        url: string;
+      };
+      snapshotPicture: {
+        uuid: string;
+        type: string;
+        size: number;
+        width: number;
+        height: number;
+        url: string;
+      };
+    };
+  };
+  contentType: number;
+  sessionType: number;
+  isOnlineOnly: boolean;
+  notOfflinePush: boolean;
+  offlinePushInfo: {
+    title: string;
+    desc: string;
+    ex: string;
+    iOSPushSound: string;
+    iOSBadgeCount: boolean;
+  };
+}, options?: { [key: string]: any }) {
+  return request<BaseResponse<{
+    results: Array<{
+      serverMsgID: string;
+      clientMsgID: string;
+      sendTime: number;
+      recvID: string;
+    }>;
+    failedUserIDs: string[] | null;
+  }>>('/api/im/msg/batch_send_msg', {
     method: 'POST',
     data: body,
     ...(options || {}),

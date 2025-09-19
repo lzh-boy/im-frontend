@@ -358,7 +358,14 @@ curl http://localhost/
 
 **API接口**：
 ```bash
-curl http://localhost/api/account/info
+# 管理后台接口
+curl http://localhost/api/admin/account/info
+
+# 用户服务接口
+curl http://localhost/api/user/search/full
+
+# IM系统接口
+curl http://localhost/api/im/user/get_users
 ```
 
 **后端服务**：
@@ -542,23 +549,26 @@ services:
 **NGINX代理配置**：
 
 **管理后台服务 (端口10009)**：
-- `/api/account/*` → 账户管理
-- `/api/user/password` → 用户密码重置
-- `/api/user/import` → 用户导入
-- `/api/block/*` → 封禁管理
-- `/api/default/*` → 默认好友/群组
+- `/api/admin/*` → 所有管理后台相关接口
+  - `/api/admin/account/*` → 账户管理
+  - `/api/admin/user/*` → 用户管理
+  - `/api/admin/block/*` → 封禁管理
+  - `/api/admin/default/*` → 默认好友/群组
 
 **用户服务 (端口10008)**：
-- `/api/user/*` → 用户管理（除特殊路径外）
+- `/api/user/*` → 所有用户服务相关接口
+  - `/api/user/search/*` → 用户搜索
+  - `/api/user/update` → 用户更新
 
 **IM系统服务 (端口10002)**：
-- `/api/user/get_users` → IM用户列表
-- `/api/msg/*` → 消息管理
-- `/api/group/*` → 群组管理
-- `/api/auth/*` → 认证管理
-- `/api/friend/*` → 好友管理
-- `/api/third/*` → 第三方服务
-- `/api/object/*` → 对象存储
+- `/api/im/*` → 所有IM系统相关接口
+  - `/api/im/user/*` → IM用户管理
+  - `/api/im/msg/*` → 消息管理
+  - `/api/im/group/*` → 群组管理
+  - `/api/im/auth/*` → 认证管理
+  - `/api/im/friend/*` → 好友管理
+  - `/api/im/third/*` → 第三方服务
+  - `/api/im/object/*` → 对象存储
 
 ### 环境变量
 
@@ -621,8 +631,11 @@ SSL_KEY_PATH=/etc/nginx/ssl/cert.key
 3. 重新部署
 
 **添加新的API路径**：
-1. 在NGINX配置中添加新的location块
-2. 指定正确的upstream服务器
+1. 根据服务类型确定API前缀：
+   - 管理后台服务 → `/api/admin/*`
+   - 用户服务 → `/api/user/*`
+   - IM系统服务 → `/api/im/*`
+2. 在NGINX配置中添加新的location块（如需要）
 3. 重新部署
 
 #### 日志查看

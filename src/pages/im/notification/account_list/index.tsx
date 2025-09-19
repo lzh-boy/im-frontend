@@ -1,30 +1,25 @@
 import React, { useState, useRef } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import { Button, Modal, Form, Input, Select, Upload, message, Avatar } from 'antd';
-import { PlusOutlined, UploadOutlined } from '@ant-design/icons';
+import { Button, Modal, Input, message, Avatar, Upload } from 'antd';
+import { EditOutlined, SaveOutlined, CloseOutlined, UploadOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { addNotificationAccount, getNotificationAccounts, deleteNotificationAccount, updateNotificationAccount } from '@/services/ant-design-pro/api';
+import { getNotificationAccounts, deleteNotificationAccount, updateNotificationAccount } from '@/services/ant-design-pro/api';
 import { uploadGenericFile } from '@/utils/fileUpload';
 
-const { Option } = Select;
-
 interface NotificationAccount {
-  id: string;
   userID: string;
   nickName: string;
   faceURL: string;
   appMangerLevel: number;
-  createTime?: string;
-  updateTime?: string;
 }
 
 const AccountList: React.FC = () => {
-  const [form] = Form.useForm();
-  const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string>('');
-  const [editingRecord, setEditingRecord] = useState<NotificationAccount | null>(null);
+  const [editingKey, setEditingKey] = useState<string>('');
+  const [editingNickName, setEditingNickName] = useState<string>('');
+  const [editingAvatar, setEditingAvatar] = useState<string>('');
+  const [avatarLoading, setAvatarLoading] = useState<string>('');
   const actionRef = useRef<ActionType>(null);
 
   // 表格列配置
@@ -33,27 +28,73 @@ const AccountList: React.FC = () => {
       title: '用户头像',
       dataIndex: 'faceURL',
       hideInSearch: true,
-      width: 100,
-      render: (_, record) => (
-        <Avatar
-          size={40}
-          src={record.faceURL}
-          icon={!record.faceURL && <span>头像</span>}
-        />
-      ),
+      width: 120,
+      render: (_, record) => {
+        const isEditing = editingKey === record.userID;
+        const isLoading = avatarLoading === record.userID;
+        
+        if (isEditing) {
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Avatar
+                size={40}
+                src={editingAvatar || record.faceURL}
+                icon={!editingAvatar && !record.faceURL && <span>头像</span>}
+              />
+              <Upload
+                beforeUpload={(file) => handleAvatarUpload(file, record.userID)}
+                showUploadList={false}
+                accept="image/*"
+                multiple={false}
+                maxCount={1}
+              >
+                <Button 
+                  size="small" 
+                  icon={<UploadOutlined />} 
+                  loading={isLoading}
+                >
+                  更换
+                </Button>
+              </Upload>
+            </div>
+          );
+        }
+        
+        return (
+          <Avatar
+            size={40}
+            src={record.faceURL}
+            icon={!record.faceURL && <span>头像</span>}
+          />
+        );
+      },
     },
     {
       title: '用户昵称',
       dataIndex: 'nickName',
-      hideInSearch: true,
       ellipsis: true,
+      renderFormItem: () => <Input placeholder="请输入用户昵称" />,
+      render: (_, record) => {
+        const isEditing = editingKey === record.userID;
+        if (isEditing) {
+          return (
+            <Input
+              value={editingNickName}
+              onChange={(e) => setEditingNickName(e.target.value)}
+              onPressEnter={() => handleSave(record.userID)}
+              style={{ width: '100%' }}
+            />
+          );
+        }
+        return record.nickName;
+      },
     },
     {
       title: '用户ID',
       dataIndex: 'userID',
-      hideInSearch: true,
       copyable: true,
       ellipsis: true,
+      renderFormItem: () => <Input placeholder="请输入用户ID" />,
     },
     {
       title: '用户类型',
@@ -74,35 +115,45 @@ const AccountList: React.FC = () => {
       },
     },
     {
-      title: '创建时间',
-      dataIndex: 'createTime',
-      hideInSearch: true,
-      width: 180,
-      valueType: 'dateTime',
-    },
-    {
       title: '操作',
       valueType: 'option',
       width: 120,
-      render: (_, record) => [
-        <Button
-          key="edit"
-          type="link"
-          size="small"
-          onClick={() => handleEdit(record)}
-        >
-          编辑
-        </Button>,
-        <Button
-          key="delete"
-          type="link"
-          size="small"
-          danger
-          onClick={() => handleDelete(record.id)}
-        >
-          删除
-        </Button>,
-      ],
+      render: (_, record) => {
+        const isEditing = editingKey === record.userID;
+        if (isEditing) {
+          return [
+            <Button
+              key="save"
+              type="link"
+              size="small"
+              icon={<SaveOutlined />}
+              onClick={() => handleSave(record.userID)}
+            >
+              保存
+            </Button>,
+            <Button
+              key="cancel"
+              type="link"
+              size="small"
+              icon={<CloseOutlined />}
+              onClick={() => handleCancel()}
+            >
+              取消
+            </Button>,
+          ];
+        }
+        return [
+          <Button
+            key="edit"
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+          >
+            编辑
+          </Button>,
+        ];
+      },
     },
   ];
 
@@ -117,7 +168,7 @@ const AccountList: React.FC = () => {
       });
       
       return {
-        data: response.data?.accounts || [],
+        data: response.data?.notificationAccounts || [],
         success: true,
         total: response.data?.total || 0,
       };
@@ -131,51 +182,66 @@ const AccountList: React.FC = () => {
     }
   };
 
-  // 处理新增
-  const handleAdd = () => {
-    form.resetFields();
-    setAvatarUrl('');
-    setEditingRecord(null);
-    setModalVisible(true);
-  };
 
   // 处理编辑
   const handleEdit = (record: NotificationAccount) => {
-    form.setFieldsValue({
-      userID: record.userID,
-      nickName: record.nickName,
-      appMangerLevel: record.appMangerLevel,
-    });
-    setAvatarUrl(record.faceURL);
-    setEditingRecord(record);
-    setModalVisible(true);
+    setEditingKey(record.userID);
+    setEditingNickName(record.nickName);
+    setEditingAvatar(record.faceURL);
   };
 
-  // 处理删除
-  const handleDelete = async (id: string) => {
-    Modal.confirm({
-      title: '确认删除',
-      content: '确定要删除这个通知账号吗？',
-      onOk: async () => {
-        try {
-          await deleteNotificationAccount({ id });
-          message.success('删除成功');
-          actionRef.current?.reload();
-        } catch (error) {
-          console.error('删除失败:', error);
-          message.error('删除失败');
-        }
-      },
-    });
+  // 处理保存
+  const handleSave = async (userID: string) => {
+    if (!editingNickName.trim()) {
+      message.error('昵称不能为空');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // 如果头像有变化，先更新头像
+      if (editingAvatar && editingAvatar !== '') {
+        await updateNotificationAccount({
+          userID,
+          nickName: editingNickName.trim(),
+          faceURL: editingAvatar,
+        });
+      } else {
+        await updateNotificationAccount({
+          userID,
+          nickName: editingNickName.trim(),
+        });
+      }
+      
+      message.success('保存成功');
+      setEditingKey('');
+      setEditingNickName('');
+      setEditingAvatar('');
+      actionRef.current?.reload();
+    } catch (error) {
+      console.error('保存失败:', error);
+      message.error('保存失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 处理取消
+  const handleCancel = () => {
+    setEditingKey('');
+    setEditingNickName('');
+    setEditingAvatar('');
   };
 
   // 处理头像上传
-  const handleAvatarUpload = async (file: File) => {
+  const handleAvatarUpload = async (file: File, userID: string) => {
     try {
       console.log('开始上传头像:', {
         name: file.name,
         size: file.size,
-        type: file.type
+        type: file.type,
+        userID
       });
       
       // 验证文件类型
@@ -191,13 +257,14 @@ const AccountList: React.FC = () => {
         return false;
       }
       
-      setLoading(true);
-      // 使用通用文件上传，不更新账户信息
-      const result = await uploadGenericFile(file, `notification/${file.name}`);
+      setAvatarLoading(userID);
+      
+      // 使用通用文件上传
+      const result = await uploadGenericFile(file, `notification/${userID}_${file.name}`);
       console.log('上传结果:', result);
       
       if (result.success) {
-        setAvatarUrl(result.url);
+        setEditingAvatar(result.url);
         message.success('头像上传成功');
       } else {
         throw new Error(result.error || '上传失败');
@@ -209,51 +276,28 @@ const AccountList: React.FC = () => {
       message.error(`头像上传失败: ${error instanceof Error ? error.message : '未知错误'}`);
       return false;
     } finally {
-      setLoading(false);
+      setAvatarLoading('');
     }
   };
 
-  // 处理表单提交
-  const handleSubmit = async () => {
-    try {
-      const values = await form.validateFields();
-      
-      if (!avatarUrl) {
-        message.error('请上传用户头像');
-        return;
-      }
-
-      setLoading(true);
-      
-      const requestData = {
-        userID: values.userID,
-        nickName: values.nickName,
-        faceURL: avatarUrl,
-        appMangerLevel: values.appMangerLevel,
-      };
-
-      if (editingRecord) {
-        // 编辑模式
-        await updateNotificationAccount({
-          id: editingRecord.id,
-          ...requestData,
-        });
-        message.success('更新成功');
-      } else {
-        // 新增模式
-        await addNotificationAccount(requestData);
-        message.success('添加成功');
-      }
-      
-      setModalVisible(false);
-      actionRef.current?.reload();
-    } catch (error) {
-      console.error('提交失败:', error);
-      message.error('操作失败');
-    } finally {
-      setLoading(false);
-    }
+  // 处理删除
+  const handleDelete = async (userID: string) => {
+    Modal.confirm({
+      title: '确认删除',
+      content: '确定要删除这个通知账号吗？',
+      onOk: async () => {
+        try {
+          await deleteNotificationAccount({ userID });
+          message.success('删除成功');
+          actionRef.current?.reload();
+        } catch (error) {
+          console.error('删除失败:', error);
+          message.error('删除失败');
+        }
+      },
+    });
   };
+
 
   return (
     <PageContainer
@@ -271,20 +315,14 @@ const AccountList: React.FC = () => {
       <ProTable<NotificationAccount>
         headerTitle="通知账号列表"
         actionRef={actionRef}
-        rowKey="id"
-        search={false}
+        rowKey="userID"
+        search={{
+          labelWidth: 'auto',
+          defaultCollapsed: false,
+        }}
         request={fetchNotificationAccounts}
         columns={columns}
-        toolBarRender={() => [
-          <Button
-            key="add"
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleAdd}
-          >
-            新增
-          </Button>,
-        ]}
+        toolBarRender={() => []}
         pagination={{
           defaultPageSize: 10,
           showSizeChanger: true,
@@ -292,76 +330,6 @@ const AccountList: React.FC = () => {
         }}
       />
 
-      <Modal
-        title={editingRecord ? '编辑通知账号' : '新增通知账号'}
-        open={modalVisible}
-        onCancel={() => setModalVisible(false)}
-        onOk={handleSubmit}
-        confirmLoading={loading}
-        width={600}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={{
-            appMangerLevel: 3,
-          }}
-        >
-          <Form.Item label="用户头像" required>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <Avatar
-                size={80}
-                src={avatarUrl}
-                icon={!avatarUrl && <span>头像</span>}
-              />
-              <Upload
-                beforeUpload={handleAvatarUpload}
-                showUploadList={false}
-                accept="image/*"
-                multiple={false}
-                maxCount={1}
-              >
-                <Button icon={<UploadOutlined />} loading={loading}>
-                  上传头像
-                </Button>
-              </Upload>
-            </div>
-          </Form.Item>
-
-          <Form.Item
-            name="userID"
-            label="用户ID"
-            rules={[
-              { required: true, message: '请输入用户ID' },
-              { min: 1, max: 50, message: '用户ID长度为1-50个字符' },
-            ]}
-          >
-            <Input placeholder="请输入用户ID" />
-          </Form.Item>
-
-          <Form.Item
-            name="nickName"
-            label="用户昵称"
-            rules={[
-              { required: true, message: '请输入用户昵称' },
-              { min: 1, max: 50, message: '用户昵称长度为1-50个字符' },
-            ]}
-          >
-            <Input placeholder="请输入用户昵称" />
-          </Form.Item>
-
-          <Form.Item
-            name="appMangerLevel"
-            label="用户类型"
-            rules={[{ required: true, message: '请选择用户类型' }]}
-          >
-            <Select placeholder="请选择用户类型">
-              <Option value={3}>系统账号</Option>
-              <Option value={4}>机器人</Option>
-            </Select>
-          </Form.Item>
-        </Form>
-      </Modal>
     </PageContainer>
   );
 };

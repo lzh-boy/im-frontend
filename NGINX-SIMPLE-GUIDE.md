@@ -64,17 +64,17 @@ sudo systemctl reload nginx
 
 | 服务类型 | 端口 | 接口路径 | 说明 |
 |---------|------|----------|------|
-| 管理后台 | 10009 | `/api/account`, `/api/user/password`, `/api/user/import`, `/api/block`, `/api/default` | 账户管理、用户管理、封禁管理等 |
-| 用户服务 | 10008 | `/api/user` | 用户相关操作 |
-| IM系统 | 10002 | `/api/user/get_users`, `/api/msg`, `/api/group`, `/api/auth`, `/api/friend`, `/api/third`, `/api/object` | IM功能、消息、群组、文件上传等 |
+| 管理后台 | 10009 | `/api/admin/*` | 所有管理后台相关接口 |
+| 用户服务 | 10008 | `/api/user/*` | 所有用户服务相关接口 |
+| IM系统 | 10002 | `/api/im/*` | 所有IM系统相关接口 |
 
 ### 路径重写规则
 
-所有 `/api/*` 路径都会被重写为 `/*`：
+根据服务类型，API路径会被重写：
 
-- `/api/account/login` → `http://服务器IP:10009/account/login`
-- `/api/msg/search` → `http://服务器IP:10002/msg/search`
-- `/api/user/info` → `http://服务器IP:10008/user/info`
+- `/api/admin/account/login` → `http://服务器IP:10009/account/login`
+- `/api/user/search/full` → `http://服务器IP:10008/search/full`
+- `/api/im/msg/search` → `http://服务器IP:10002/msg/search`
 
 ## 🌍 不同环境配置
 
@@ -119,14 +119,14 @@ sudo tail -f /var/log/nginx/error.log
 
 ### 4. 测试API接口
 ```bash
-# 测试账户接口
-curl http://localhost/api/account/info
+# 测试管理后台接口
+curl http://localhost/api/admin/account/info
 
-# 测试用户接口
-curl http://localhost/api/user/search
+# 测试用户服务接口
+curl http://localhost/api/user/search/full
 
-# 测试消息接口
-curl http://localhost/api/msg/search
+# 测试IM系统接口
+curl http://localhost/api/im/msg/search
 ```
 
 ## 🛠️ 常见问题解决
@@ -178,11 +178,24 @@ server {
 ```
 
 ### 添加新的API路径
-在配置文件中添加新的location块：
+根据服务类型，在相应的location块中添加路径：
 ```nginx
-location /api/new-service {
-    proxy_pass http://new_backend;
-    rewrite ^/api(.*)$ $1 break;
+# 管理后台服务
+location /api/admin {
+    proxy_pass http://admin_backend;
+    rewrite ^/api/admin(.*)$ $1 break;
+}
+
+# 用户服务
+location /api/user {
+    proxy_pass http://user_backend;
+    rewrite ^/api/user(.*)$ $1 break;
+}
+
+# IM系统服务
+location /api/im {
+    proxy_pass http://im_backend;
+    rewrite ^/api/im(.*)$ $1 break;
 }
 ```
 

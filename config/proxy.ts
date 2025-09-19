@@ -28,67 +28,22 @@ const createProxyConfig = (target: string) => ({
 export default {
   // 开发环境代理配置
   dev: {
-    // ==================== 管理后台服务 (端口 10009) ====================
-    '/api/account': {
-      ...createProxyConfig(SERVER_CONFIG.ADMIN_SERVER),
-      pathRewrite: { '^/api': '' },
-    },
-     // ==================== IM 系统服务 (端口 10002) ====================
-     '/api/user/get_users': {
+    // ==================== IM 系统服务 (端口 10002) - /api/im ====================
+    '/api/im': {
       ...createProxyConfig(SERVER_CONFIG.IM_SERVER),
-      pathRewrite: { '^/api': '' },
+      pathRewrite: { '^/api/im': '' },
     },
-    '/api/user/get_notification_accounts': {
-      ...createProxyConfig(SERVER_CONFIG.IM_SERVER),
-      pathRewrite: { '^/api': '' },
-    },
-    '/api/user/password': {
-      ...createProxyConfig(SERVER_CONFIG.ADMIN_SERVER),
-      pathRewrite: { '^/api': '' },
-    },
-    '/api/user/import': {
-      ...createProxyConfig(SERVER_CONFIG.ADMIN_SERVER),
-      pathRewrite: { '^/api': '' },
-    },
-    '/api/block': {
-      ...createProxyConfig(SERVER_CONFIG.ADMIN_SERVER),
-      pathRewrite: { '^/api': '' },
-    },
-    '/api/default': {
-      ...createProxyConfig(SERVER_CONFIG.ADMIN_SERVER),
-      pathRewrite: { '^/api': '' },
-    },
-   
-    // ==================== 用户服务 (端口 10008) ====================
+    
+    // ==================== 用户服务 (端口 10008) - /api/user ====================
     '/api/user': {
       ...createProxyConfig(SERVER_CONFIG.USER_SERVER),
-      pathRewrite: { '^/api': '' },
+      pathRewrite: { '^/api/user': '' },
     },
-
     
-    '/api/msg': {
-      ...createProxyConfig(SERVER_CONFIG.IM_SERVER),
-      pathRewrite: { '^/api': '' },
-    },
-    '/api/group': {
-      ...createProxyConfig(SERVER_CONFIG.IM_SERVER),
-      pathRewrite: { '^/api': '' },
-    },
-    '/api/auth': {
-      ...createProxyConfig(SERVER_CONFIG.IM_SERVER),
-      pathRewrite: { '^/api': '' },
-    },
-    '/api/friend': {
-      ...createProxyConfig(SERVER_CONFIG.IM_SERVER),
-      pathRewrite: { '^/api': '' },
-    },
-    '/api/third': {
-      ...createProxyConfig(SERVER_CONFIG.IM_SERVER),
-      pathRewrite: { '^/api': '' },
-    },
-    '/api/object': {
-      ...createProxyConfig(SERVER_CONFIG.IM_SERVER),
-      pathRewrite: { '^/api': '' },
+    // ==================== 管理后台服务 (端口 10009) - /api/admin ====================
+    '/api/admin': {
+      ...createProxyConfig(SERVER_CONFIG.ADMIN_SERVER),
+      pathRewrite: { '^/api/admin': '' },
     },
   },
 

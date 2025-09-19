@@ -161,6 +161,35 @@ export const uploadFile = async (file: File, config: FileUploadConfig): Promise<
       throw new Error(`初始化分片上传失败: ${initResponse.errMsg}`);
     }
     
+    // 检查是否直接返回了URL（无需后续上传）
+    if (initResponse.data.url) {
+      console.log('接口直接返回了URL，跳过后续上传步骤:', initResponse.data.url);
+      const finalUrl = initResponse.data.url;
+      
+      // 6. 更新账户信息（如果需要）
+      if (config.updateAccount && config.userID) {
+        console.log('步骤6: 更新账户信息...');
+        const updateResponse = await updateAccountInfo({
+          userID: config.userID,
+          faceURL: finalUrl,
+        });
+        console.log('更新账户信息响应:', updateResponse);
+        
+        if (updateResponse.errCode !== 0) {
+          throw new Error(`更新账户信息失败: ${updateResponse.errMsg}`);
+        }
+        
+        console.log('账户信息更新完成');
+      }
+      
+      console.log('文件上传流程完成（直接返回URL）');
+      return {
+        url: finalUrl,
+        success: true
+      };
+    }
+    
+    // 需要分片上传的情况
     const { uploadID, sign } = initResponse.data.upload;
     console.log('上传ID:', uploadID);
     console.log('预签名URL:', sign.parts[0].url);
