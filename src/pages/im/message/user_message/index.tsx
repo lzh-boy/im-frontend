@@ -44,14 +44,14 @@ const UserMessage: React.FC = () => {
         requestParams.sendID = params.sendID;
       }
 
-      // 只有当 contentType 不为 0 时才添加该参数
-      if (params.contentType && params.contentType !== 0) {
-        requestParams.contentType = params.contentType;
+      // 只有当 contentType 不为 0 时才添加该参数，确保转换为数字
+      if (params.contentType !== undefined && params.contentType !== null && params.contentType !== '' && params.contentType !== 0) {
+        requestParams.contentType = Number(params.contentType);
       }
 
-      // 只有当 sessionType 有值时才添加该参数
-      if (params.sessionType) {
-        requestParams.sessionType = params.sessionType;
+      // 只有当 sessionType 有值时才添加该参数，确保转换为数字
+      if (params.sessionType !== undefined && params.sessionType !== null && params.sessionType !== '') {
+        requestParams.sessionType = Number(params.sessionType);
       }
 
       // 只有当 content 有值且不为空字符串时才添加该参数
@@ -195,24 +195,76 @@ const UserMessage: React.FC = () => {
   const fetchConversationMessages = async (sendID: string, recvID: string) => {
     setConversationLoading(true);
     try {
-      // 获取双方的所有消息，不限制发送者和接收者
-      const response = await searchUserMessages({
-        pagination: {
-          pageNumber: 1,
-          showNumber: 100, // 获取更多消息
-        },
-      });
+      // 分别获取四个方向的消息，确保获取完整的对话记录
+      const [response1, response2, response3, response4] = await Promise.all([
+        // 获取 sendID -> recvID 的消息
+        searchUserMessages({
+          sendID: sendID,
+          recvID: recvID,
+          pagination: {
+            pageNumber: 1,
+            showNumber: 50,
+          },
+        }),
+        // 获取 recvID -> sendID 的消息
+        searchUserMessages({
+          sendID: recvID,
+          recvID: sendID,
+          pagination: {
+            pageNumber: 1,
+            showNumber: 50,
+          },
+        }),
+        // 再次获取 sendID -> recvID 的消息（互换参数）
+        searchUserMessages({
+          sendID: recvID,
+          recvID: sendID,
+          pagination: {
+            pageNumber: 1,
+            showNumber: 50,
+          },
+        }),
+        // 再次获取 recvID -> sendID 的消息（互换参数）
+        searchUserMessages({
+          sendID: sendID,
+          recvID: recvID,
+          pagination: {
+            pageNumber: 1,
+            showNumber: 50,
+          },
+        })
+      ]);
 
-      if (response.errCode === 0) {
-        // 过滤出双方之间的消息
-        const allMessages = response.data.chatLogs || [];
-        const conversationMessages = allMessages.filter(msg => 
-          (msg.chatLog.sendID === sendID && msg.chatLog.recvID === recvID) ||
-          (msg.chatLog.sendID === recvID && msg.chatLog.recvID === sendID)
+      // 检查所有请求是否成功
+      const responses = [response1, response2, response3, response4];
+      const hasError = responses.some(resp => resp.errCode !== 0);
+      
+      if (!hasError) {
+        // 合并所有方向的消息
+        const allMessages: UserMessageItem[] = [];
+        responses.forEach(response => {
+          if (response.data?.chatLogs) {
+            allMessages.push(...response.data.chatLogs);
+          }
+        });
+        
+        // 去重处理（基于 serverMsgID）
+        const uniqueMessages = allMessages.filter((message, index, self) => 
+          index === self.findIndex(m => m.chatLog.serverMsgID === message.chatLog.serverMsgID)
         );
+        
+        // 按实际发送时间排序（sendTime 是时间戳）
+        const conversationMessages = uniqueMessages.sort((a, b) => {
+          const timeA = a.chatLog.sendTime;
+          const timeB = b.chatLog.sendTime;
+          return timeA - timeB; // 升序排列，最早的消息在前
+        });
+        
+        console.log('获取到的对话消息数量:', conversationMessages.length);
         setConversationMessages(conversationMessages);
       } else {
-        message.error(response.errMsg || '获取聊天记录失败');
+        const errorMsg = responses.find(resp => resp.errCode !== 0)?.errMsg || '获取聊天记录失败';
+        message.error(errorMsg);
         setConversationMessages([]);
       }
     } catch (error) {
@@ -310,6 +362,9 @@ const UserMessage: React.FC = () => {
       valueEnum: {
         1: { text: '单聊' },
         2: { text: '群聊' },
+      },
+      fieldProps: {
+        placeholder: '请选择会话类型',
       },
       render: (_, record: UserMessageItem) => (
         <Tag color={record.chatLog.sessionType === 1 ? 'blue' : 'green'}>
@@ -448,125 +503,243 @@ const UserMessage: React.FC = () => {
 
       {/* 聊天记录弹窗 */}
       <Modal
-        title={currentMessage ? `聊天记录 - ${currentMessage.chatLog.senderNickname} & ${currentMessage.chatLog.recvNickname}` : '聊天记录'}
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <MessageOutlined style={{ color: '#1890ff' }} />
+            <span>聊天记录</span>
+            {currentMessage && (
+              <span style={{ fontSize: '14px', color: '#666', fontWeight: 'normal' }}>
+                - {currentMessage.chatLog.senderNickname} & {currentMessage.chatLog.recvNickname}
+              </span>
+            )}
+          </div>
+        }
         open={conversationModalVisible}
         onCancel={() => {
           setConversationModalVisible(false);
           setConversationMessages([]);
         }}
         footer={[
-          <Button key="close" onClick={() => {
+          <Button key="close" type="primary" onClick={() => {
             setConversationModalVisible(false);
             setConversationMessages([]);
           }}>
             关闭
           </Button>,
         ]}
-        width={900}
+        width={1000}
         style={{ top: 20 }}
+        bodyStyle={{ padding: 0 }}
       >
-        <div style={{ height: '600px', overflow: 'auto' }}>
+        <div style={{ 
+          height: '600px', 
+          display: 'flex', 
+          flexDirection: 'column',
+          backgroundColor: '#fafafa'
+        }}>
           {conversationLoading ? (
-            <div style={{ textAlign: 'center', padding: '50px 0' }}>
-              <Text>加载聊天记录中...</Text>
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '50px 0',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%'
+            }}>
+              <div style={{ 
+                width: '40px', 
+                height: '40px', 
+                border: '3px solid #f0f0f0',
+                borderTop: '3px solid #1890ff',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                marginBottom: '16px'
+              }} />
+              <Text style={{ color: '#666' }}>加载聊天记录中...</Text>
             </div>
           ) : conversationMessages.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '50px 0' }}>
-              <Text>暂无聊天记录</Text>
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '50px 0',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%'
+            }}>
+              <MessageOutlined style={{ fontSize: '48px', color: '#d9d9d9', marginBottom: '16px' }} />
+              <Text style={{ color: '#666' }}>暂无聊天记录</Text>
             </div>
           ) : (
-            <div style={{ padding: '0 16px' }}>
-              {conversationMessages
-                .sort((a, b) => a.chatLog.sendTime - b.chatLog.sendTime)
-                .map((message, index) => {
-                  // 获取当前登录用户的ID（这里假设从localStorage获取）
-                  const currentUserID = localStorage.getItem('imUserID') || localStorage.getItem('adminUserID') || '';
-                  const isFromMe = message.chatLog.sendID === currentUserID;
-                  const isRevoked = message.isRevoked;
-                  
-                  return (
-                    <div
-                      key={message.chatLog.serverMsgID}
-                      style={{
-                        marginBottom: 16,
-                        display: 'flex',
-                        flexDirection: isFromMe ? 'row-reverse' : 'row',
-                        alignItems: 'flex-start',
-                      }}
-                    >
-                      {/* 头像 */}
+            <div style={{ 
+              flex: 1,
+              overflow: 'auto',
+              padding: '16px',
+              background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
+            }}>
+              {conversationMessages.map((message, index) => {
+                // 获取当前登录用户的ID
+                const currentUserID = localStorage.getItem('imUserID') || localStorage.getItem('adminUserID') || '';
+                const isFromMe = message.chatLog.sendID === currentUserID;
+                const isRevoked = message.isRevoked;
+                
+                // 获取发送者和接收者信息
+                const senderInfo = {
+                  nickname: message.chatLog.senderNickname || '未知用户',
+                  faceURL: message.chatLog.senderFaceURL,
+                  userID: message.chatLog.sendID
+                };
+                
+                const receiverInfo = {
+                  nickname: message.chatLog.recvNickname || '未知用户',
+                  faceURL: message.chatLog.recvFaceURL,
+                  userID: message.chatLog.recvID
+                };
+                
+                // 确定显示的用户信息
+                const displayUser = isFromMe ? senderInfo : receiverInfo;
+                const otherUser = isFromMe ? receiverInfo : senderInfo;
+                
+                return (
+                  <div
+                    key={message.chatLog.serverMsgID}
+                    style={{
+                      marginBottom: '20px',
+                      display: 'flex',
+                      flexDirection: isFromMe ? 'row-reverse' : 'row',
+                      alignItems: 'flex-start',
+                      gap: '12px'
+                    }}
+                  >
+                    {/* 头像 */}
+                    <div style={{ position: 'relative' }}>
                       <Avatar
-                        size={32}
-                        src={isFromMe ? message.chatLog.senderFaceURL : message.chatLog.senderFaceURL}
+                        size={40}
+                        src={displayUser.faceURL}
                         style={{ 
-                          margin: isFromMe ? '0 0 0 8px' : '0 8px 0 0',
-                          backgroundColor: isFromMe ? '#1890ff' : '#52c41a'
+                          backgroundColor: isFromMe ? '#1890ff' : '#52c41a',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                          border: '2px solid #fff'
                         }}
                       >
-                        {getInitial(isFromMe ? '我' : message.chatLog.senderNickname)}
+                        {getInitial(displayUser.nickname)}
                       </Avatar>
+                      {isFromMe && (
+                        <div style={{
+                          position: 'absolute',
+                          bottom: '-2px',
+                          right: '-2px',
+                          width: '12px',
+                          height: '12px',
+                          backgroundColor: '#52c41a',
+                          borderRadius: '50%',
+                          border: '2px solid #fff'
+                        }} />
+                      )}
+                    </div>
+                    
+                    {/* 消息内容区域 */}
+                    <div style={{ 
+                      maxWidth: '70%',
+                      minWidth: '120px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: isFromMe ? 'flex-end' : 'flex-start'
+                    }}>
+                      {/* 用户信息 */}
+                      <div style={{ 
+                        fontSize: '12px', 
+                        color: '#666',
+                        marginBottom: '4px',
+                        padding: '0 8px'
+                      }}>
+                        <span style={{ fontWeight: '500' }}>
+                          {isFromMe ? '我' : displayUser.nickname}
+                        </span>
+                        <span style={{ marginLeft: '8px', opacity: 0.7 }}>
+                          {new Date(message.chatLog.sendTime).toLocaleString('zh-CN', {
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
                       
-                      {/* 消息内容 */}
+                      {/* 消息气泡 */}
                       <div
                         style={{
-                          maxWidth: '70%',
-                          backgroundColor: isFromMe ? '#1890ff' : '#f0f0f0',
-                          color: isFromMe ? '#fff' : '#000',
-                          padding: '8px 12px',
-                          borderRadius: '8px',
+                          backgroundColor: isFromMe ? '#1890ff' : '#fff',
+                          color: isFromMe ? '#fff' : '#333',
+                          padding: '12px 16px',
+                          borderRadius: isFromMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                           position: 'relative',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                          border: isFromMe ? 'none' : '1px solid #e8e8e8',
+                          wordBreak: 'break-word',
+                          lineHeight: '1.4'
                         }}
                       >
-                        {/* 发送者信息 */}
-                        <div style={{ 
-                          fontSize: '12px', 
-                          opacity: 0.8, 
-                          marginBottom: '4px',
-                          color: isFromMe ? '#fff' : '#666'
-                        }}>
-                          {isFromMe ? '我' : message.chatLog.senderNickname}
-                          <span style={{ marginLeft: 8 }}>
-                            {new Date(message.chatLog.sendTime).toLocaleString('zh-CN')}
-                          </span>
-                        </div>
-                        
                         {/* 消息内容 */}
-                        <div style={{ wordBreak: 'break-word' }}>
+                        <div>
                           {isRevoked ? (
-                            <Text style={{ fontStyle: 'italic', opacity: 0.7 }}>
-                              [此消息已被撤回]
-                            </Text>
+                            <div style={{ 
+                              fontStyle: 'italic', 
+                              opacity: 0.7,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}>
+                              <UndoOutlined />
+                              <span>此消息已被撤回</span>
+                            </div>
                           ) : (
-                            <Text style={{ color: isFromMe ? '#fff' : '#000' }}>
+                            <div style={{ 
+                              color: isFromMe ? '#fff' : '#333',
+                              fontSize: '14px'
+                            }}>
                               {parseMessageContent(message.chatLog.content, message.chatLog.contentType)}
-                            </Text>
+                            </div>
                           )}
                         </div>
                         
                         {/* 消息类型标签 */}
-                        <div style={{ 
-                          marginTop: '4px',
-                          fontSize: '10px',
-                          opacity: 0.7
-                        }}>
-                          <Tag 
-                            color={isFromMe ? 'white' : 'default'}
-                            style={{ 
-                              color: isFromMe ? '#1890ff' : '#666',
-                              backgroundColor: isFromMe ? 'rgba(255,255,255,0.2)' : '#f0f0f0',
-                              fontSize: '10px'
-                            }}
-                          >
-                            {MESSAGE_TYPES[message.chatLog.contentType as keyof typeof MESSAGE_TYPES] || '未知类型'}
-                          </Tag>
-                        </div>
+                        {!isRevoked && (
+                          <div style={{ 
+                            marginTop: '8px',
+                            display: 'flex',
+                            justifyContent: isFromMe ? 'flex-end' : 'flex-start'
+                          }}>
+                            <Tag 
+                              size="small"
+                              style={{ 
+                                color: isFromMe ? '#1890ff' : '#666',
+                                backgroundColor: isFromMe ? 'rgba(255,255,255,0.2)' : '#f0f0f0',
+                                border: 'none',
+                                fontSize: '10px',
+                                borderRadius: '10px'
+                              }}
+                            >
+                              {MESSAGE_TYPES[message.chatLog.contentType as keyof typeof MESSAGE_TYPES] || '未知类型'}
+                            </Tag>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
+        
+        <style jsx>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
       </Modal>
     </PageContainer>
   );

@@ -7,6 +7,8 @@
 
 // 服务器地址配置
 const SERVER_CONFIG = {
+  // 统一服务器地址
+  BASE_SERVER: 'http://47.83.254.218',
   // 管理后台服务 (端口 10009)
   ADMIN_SERVER: 'http://47.83.254.218:10009',
   // IM 服务 (端口 10002) 
@@ -26,76 +28,67 @@ const createProxyConfig = (target: string) => ({
 export default {
   // 开发环境代理配置
   dev: {
-    // ==================== 管理后台相关接口 ====================
-    // 账户管理接口
-    '/account': {
+    // ==================== 管理后台服务 (端口 10009) ====================
+    '/api/account': {
       ...createProxyConfig(SERVER_CONFIG.ADMIN_SERVER),
-      // 保持 /account 路径，不进行路径重写
+      pathRewrite: { '^/api': '' },
     },
-     // IM 用户列表接口
-     '/user/get_users': {
+     // ==================== IM 系统服务 (端口 10002) ====================
+     '/api/user/get_users': {
       ...createProxyConfig(SERVER_CONFIG.IM_SERVER),
+      pathRewrite: { '^/api': '' },
     },
-// 用户密码重置接口
-    '/user/password': {
+    '/api/user/get_notification_accounts': {
+      ...createProxyConfig(SERVER_CONFIG.IM_SERVER),
+      pathRewrite: { '^/api': '' },
+    },
+    '/api/user/password': {
       ...createProxyConfig(SERVER_CONFIG.ADMIN_SERVER),
+      pathRewrite: { '^/api': '' },
     },
-
-    // 用户管理相关接口
-    '/user': {
+    '/api/user/import': {
+      ...createProxyConfig(SERVER_CONFIG.ADMIN_SERVER),
+      pathRewrite: { '^/api': '' },
+    },
+    '/api/block': {
+      ...createProxyConfig(SERVER_CONFIG.ADMIN_SERVER),
+      pathRewrite: { '^/api': '' },
+    },
+    '/api/default': {
+      ...createProxyConfig(SERVER_CONFIG.ADMIN_SERVER),
+      pathRewrite: { '^/api': '' },
+    },
+   
+    // ==================== 用户服务 (端口 10008) ====================
+    '/api/user': {
       ...createProxyConfig(SERVER_CONFIG.USER_SERVER),
-      // 用户服务使用端口 10008
+      pathRewrite: { '^/api': '' },
     },
 
     
-    // 用户导入接口
-    '/user/import': {
-      ...createProxyConfig(SERVER_CONFIG.ADMIN_SERVER),
-    },
-
-    // 封禁用户接口
-    '/block': {
-      ...createProxyConfig(SERVER_CONFIG.ADMIN_SERVER),
-    },
-
-    // 默认好友/群组接口
-    '/default': {
-      ...createProxyConfig(SERVER_CONFIG.ADMIN_SERVER),
-    },
-
-    // ==================== IM 系统相关接口 ====================
-    // 消息相关接口
-    '/msg': {
+    '/api/msg': {
       ...createProxyConfig(SERVER_CONFIG.IM_SERVER),
+      pathRewrite: { '^/api': '' },
     },
-
-    // 群组管理接口
-    '/group': {
+    '/api/group': {
       ...createProxyConfig(SERVER_CONFIG.IM_SERVER),
+      pathRewrite: { '^/api': '' },
     },
-
-    // 认证相关接口
-    '/auth': {
+    '/api/auth': {
       ...createProxyConfig(SERVER_CONFIG.IM_SERVER),
+      pathRewrite: { '^/api': '' },
     },
-
-    // 好友关系接口
-    '/friend': {
+    '/api/friend': {
       ...createProxyConfig(SERVER_CONFIG.IM_SERVER),
+      pathRewrite: { '^/api': '' },
     },
-
-   
-
-    // ==================== 运维中心相关接口 ====================
-    // 第三方服务接口（客户端日志等）
-    '/third': {
+    '/api/third': {
       ...createProxyConfig(SERVER_CONFIG.IM_SERVER),
+      pathRewrite: { '^/api': '' },
     },
-
-    // ==================== 文件上传相关接口 ====================
-    // 对象存储接口
-    '/object': {
+    '/api/object': {
       ...createProxyConfig(SERVER_CONFIG.IM_SERVER),
+      pathRewrite: { '^/api': '' },
     },
   },
 
